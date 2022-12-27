@@ -1,9 +1,9 @@
 {
   "Version": "3.9.7",
-  "Title": "PureAdmin",
+  "Title": "定时任务管理系统",
   "FixedHeader": true,
   "HiddenSideBar": false,
-  "MultiTagsCache": false,
+  "MultiTagsCache": true,
   "KeepAlive": true,
   "Layout": "vertical",
   "Theme": "default",

@@ -18,6 +18,8 @@ const elStyle = computed((): CSSProperties => {
 
 const username = ref(useUserStoreHook()?.username);
 
+const input1 = ref("");
+
 const options = [
   {
     value: "admin",
@@ -61,6 +63,7 @@ function onChange() {
           :value="item.value"
         />
       </el-select>
+      <el-input v-model="input1" /> 输入内容为：{{ input1 }}
     </el-card>
   </el-space>
 </template>

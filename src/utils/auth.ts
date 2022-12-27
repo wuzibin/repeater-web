@@ -4,11 +4,11 @@ import { useUserStoreHook } from "@/store/modules/user";
 
 export interface DataInfo<T> {
   /** token */
-  accessToken: string;
+  access: string;
   /** `accessToken`的过期时间（时间戳） */
   expires: T;
   /** 用于调用刷新accessToken的接口时所需的token */
-  refreshToken: string;
+  refresh: string;
   /** 用户名 */
   username?: string;
   /** 当前登陆用户的角色 */
@@ -30,13 +30,13 @@ export function getToken(): DataInfo<number> {
  * @description 设置`token`以及一些必要信息并采用无感刷新`token`方案
  * 无感刷新：后端返回`accessToken`（访问接口使用的`token`）、`refreshToken`（用于调用刷新`accessToken`的接口时所需的`token`，`refreshToken`的过期时间（比如30天）应大于`accessToken`的过期时间（比如2小时））、`expires`（`accessToken`的过期时间）
  * 将`accessToken`、`expires`这两条信息放在key值为authorized-token的cookie里（过期自动销毁）
- * 将`username`、`roles`、`refreshToken`、`expires`这四条信息放在key值为`user-info`的sessionStorage里（浏览器关闭自动销毁）
+ * 将`username`、`roles`、`refresh`、`expires`这四条信息放在key值为`user-info`的sessionStorage里（浏览器关闭自动销毁）
  */
 export function setToken(data: DataInfo<Date>) {
   let expires = 0;
-  const { accessToken, refreshToken } = data;
+  const { access, refresh } = data;
   expires = new Date(data.expires).getTime(); // 如果后端直接设置时间戳，将此处代码改为expires = data.expires，然后把上面的DataInfo<Date>改成DataInfo<number>即可
-  const cookieString = JSON.stringify({ accessToken, expires });
+  const cookieString = JSON.stringify({ access, expires });
 
   expires > 0
     ? Cookies.set(TokenKey, cookieString, {
@@ -44,26 +44,34 @@ export function setToken(data: DataInfo<Date>) {
       })
     : Cookies.set(TokenKey, cookieString);
 
-  function setSessionKey(username: string, roles: Array<string>) {
+  function setSessionKey(
+    username: string,
+    roles: Array<string>,
+    refresh: string,
+    expires: number
+  ) {
     useUserStoreHook().SET_USERNAME(username);
     useUserStoreHook().SET_ROLES(roles);
     storageSession().setItem(sessionKey, {
-      refreshToken,
+      refresh,
       expires,
       username,
       roles
     });
   }
-
   if (data.username && data.roles) {
     const { username, roles } = data;
-    setSessionKey(username, roles);
+    setSessionKey(username, roles, refresh, expires);
   } else {
     const username =
       storageSession().getItem<DataInfo<number>>(sessionKey)?.username ?? "";
     const roles =
       storageSession().getItem<DataInfo<number>>(sessionKey)?.roles ?? [];
-    setSessionKey(username, roles);
+    // 如果后端接口返回了refresh，则使用新的refresh，否则继续使用storageSession中的refresh
+    const refresh = data.refresh
+      ? data.refresh
+      : storageSession().getItem<DataInfo<number>>(sessionKey)?.refresh ?? "";
+    setSessionKey(username, roles, refresh, expires);
   }
 }
 
@@ -75,5 +83,6 @@ export function removeToken() {
 
 /** 格式化token（jwt格式） */
 export const formatToken = (token: string): string => {
-  return "Bearer " + token;
+  // return "Bearer " + token;
+  return "JWT " + token;
 };

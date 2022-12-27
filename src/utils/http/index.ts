@@ -73,11 +73,12 @@ class PureHttp {
           return config;
         }
         /** 请求白名单，放置一些不需要token的接口（通过设置请求白名单，防止token过期后再请求造成的死循环问题） */
-        const whiteList = ["/refreshToken", "/login"];
+        const whiteList = ["/refresh", "/login"];
         return whiteList.some(v => config.url.indexOf(v) > -1)
           ? config
           : new Promise(resolve => {
               const data = getToken();
+              console.log("获取到的Token----", data);
               if (data) {
                 const now = new Date().getTime();
                 const expired = parseInt(data.expires) - now <= 0;
@@ -85,23 +86,24 @@ class PureHttp {
                   if (!PureHttp.isRefreshing) {
                     PureHttp.isRefreshing = true;
                     // token过期刷新
+                    console.log("token过期刷新----start----", data);
                     useUserStoreHook()
-                      .handRefreshToken({ refreshToken: data.refreshToken })
+                      .handRefreshToken({ refresh: data.refresh })
                       .then(res => {
-                        const token = res.data.accessToken;
+                        console.log("token过期刷新----", res);
+                        const token = res.data.access;
                         config.headers["Authorization"] = formatToken(token);
                         PureHttp.requests.forEach(cb => cb(token));
                         PureHttp.requests = [];
                       })
                       .finally(() => {
                         PureHttp.isRefreshing = false;
+                        console.log("token过期刷新----end");
                       });
                   }
                   resolve(PureHttp.retryOriginalRequest(config));
                 } else {
-                  config.headers["Authorization"] = formatToken(
-                    data.accessToken
-                  );
+                  config.headers["Authorization"] = formatToken(data.access);
                   resolve(config);
                 }
               } else {
