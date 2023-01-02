@@ -8,7 +8,7 @@ type Result = {
   data?: Array<any>;
 };
 
-/** 卡片列表 */
+/** 业务系统列表 */
 export const getSysInfo = () => {
   return http.request<Result>("get", baseUrlApi("sysinfo/"));
 };

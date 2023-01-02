@@ -55,6 +55,19 @@ const onLogin = async (formEl: FormInstance | undefined) => {
               message("登录成功", { type: "success" });
             });
           }
+        })
+        .catch(err => {
+          if (err.response.data.msg) {
+            message(`登录失败：${err.response.data.msg}`, { type: "error" });
+          } else {
+            console.log("登录失败", err);
+            message(`登录失败，状态码为：${err.request.status}`, {
+              type: "error"
+            });
+          }
+        })
+        .finally(() => {
+          loading.value = false;
         });
     } else {
       loading.value = false;

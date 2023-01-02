@@ -10,9 +10,13 @@ import {
   PureHttpRequestConfig
 } from "./types.d";
 import { stringify } from "qs";
+import { removeToken } from "@/utils/auth";
+import { useRouter } from "vue-router";
 import NProgress from "../progress";
 import { getToken, formatToken } from "@/utils/auth";
 import { useUserStoreHook } from "@/store/modules/user";
+
+const router = useRouter();
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
 const defaultConfig: AxiosRequestConfig = {
@@ -169,7 +173,19 @@ class PureHttp {
           resolve(response);
         })
         .catch(error => {
-          reject(error);
+          if (error.config.url.indexOf("/login") > -1) {
+            // 登录接口报错信息 直接返回
+            reject(error);
+          } else {
+            if (error.request.status === 401) {
+              // 其他接口返回401代表token过期 无法获取新的token
+              console.log("refreshToken过期，跳转到登录页");
+              removeToken();
+              router.push("/login");
+            } else {
+              reject(error);
+            }
+          }
         });
     });
   }
