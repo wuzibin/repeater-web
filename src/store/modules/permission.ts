@@ -12,7 +12,13 @@ export const usePermissionStore = defineStore({
     // 整体路由生成的菜单（静态、动态）
     wholeMenus: [],
     // 缓存页面keepAlive
-    cachePageList: ["PermissionPage", "DBInfoDetail", "DBInfoAdd"]
+    cachePageList: [
+      "PermissionPage",
+      "DBInfoDetail",
+      "DBInfoAdd",
+      "SystemDetail",
+      "SystemAdd"
+    ]
   }),
   actions: {
     /** 组装整体路由生成的菜单 */

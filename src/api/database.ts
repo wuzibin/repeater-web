@@ -43,6 +43,7 @@ export const getDBList = (params?: object) => {
   return http.request<DBList>("get", baseUrlApi("dbinfo/"), { params });
 };
 
+/** 新增数据源 */
 export const addDBInfo = (data?: object) => {
   return http.request<DBList>("post", baseUrlApi("dbinfo/"), { data });
 };

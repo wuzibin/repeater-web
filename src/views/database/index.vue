@@ -72,7 +72,7 @@ const handleDelete = async (id: number | string) => {
   if (OpDb) {
     try {
       const data = await deleteDBInfo(id);
-      message(`${OpDb.nickname}删除成功`, { type: "success" });
+      message(`数据源【${OpDb.nickname}】删除成功`, { type: "success" });
       console.log("删除数据库信息----", data);
     } catch (e) {
       console.log(e);

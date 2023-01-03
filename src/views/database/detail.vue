@@ -3,7 +3,7 @@ import { useDetail } from "./hooks";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { message } from "@/utils/message";
 import { getDBInfo, updateDBInfo, checkDBConn } from "@/api/database";
-import { getSysInfo } from "@/api/system";
+import { getSysList } from "@/api/system";
 import { getDict } from "@/api/schedule";
 import { ref, computed, onMounted } from "vue";
 
@@ -112,9 +112,9 @@ const getDBTypeData = async () => {
   }
 };
 
-const getSysInfoData = async () => {
+const getSysListData = async () => {
   try {
-    const data = await getSysInfo();
+    const data = await getSysList({ size: 1000 });
     console.log("获取业务系统对照关系----", data);
     sysInfo.value = data.data;
   } catch (e) {
@@ -150,7 +150,7 @@ const checkDBConnect = async () => {
 
 onMounted(() => {
   getDBTypeData();
-  getSysInfoData();
+  getSysListData();
   getDBDetailData(id);
 });
 </script>

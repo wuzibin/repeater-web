@@ -21,7 +21,7 @@ export default {
       component: () => import("@/views/database/add.vue"),
       meta: {
         // 不在menu菜单中显示
-        showLink: false,
+        // showLink: false,
         title: "新增数据源",
         roles: ["admin", "common"]
       }
