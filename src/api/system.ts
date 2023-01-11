@@ -28,27 +28,27 @@ type SystemInfo = {
 };
 
 /** 业务系统列表 */
-export const getSysList = (params?: object) => {
+export const getSysList = (params: object) => {
   return http.request<SystemList>("get", baseUrlApi("sysinfo/"), { params });
 };
 
 /** 新增业务系统 */
-export const addSysInfo = (data?: object) => {
+export const addSysInfo = (data: object) => {
   return http.request<SystemInfo>("post", baseUrlApi("sysinfo/"), { data });
 };
 
 /** 业务系统详情 */
-export const getSysInfo = (id?: number | string) => {
+export const getSysInfo = (id: number | string) => {
   return http.request<SystemInfo>("get", baseUrlApi(`sysinfo/${id}/`));
 };
 
 /** 删除业务系统 */
-export const deleteSysInfo = (id?: number | string) => {
+export const deleteSysInfo = (id: number | string) => {
   return http.request<SystemInfo>("delete", baseUrlApi(`sysinfo/${id}/`));
 };
 
 /** 更新业务系统信息 */
-export const updateSysInfo = (id?: number | string, data?: object) => {
+export const updateSysInfo = (id: number | string, data?: object) => {
   return http.request<SystemInfo>("patch", baseUrlApi(`sysinfo/${id}/`), {
     data
   });

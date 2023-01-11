@@ -145,14 +145,6 @@ const handleDelete = async (id: number | string) => {
           <el-table-column label="数据库主机" prop="host" />
           <el-table-column label="端口" prop="port" width="60" />
           <el-table-column label="数据库名" prop="db_name" />
-          <!--el-table-column label="状态" prop="mg_state">
-            <template v-slot="scope">
-              <el-switch
-                v-model="scope.row.mg_state"
-                @change="userStateChanged(scope.row)"
-              />
-            </template>
-          </el-table-column-->
           <el-table-column label="操作" width="180px">
             <template v-slot="scope">
               <!-- 修改按钮 -->
