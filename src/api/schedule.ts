@@ -13,6 +13,7 @@ type DictResult = {
     condition?: Array<any>;
     notify_type?: Array<any>;
     ret_type?: Array<any>;
+    diff_type?: Array<any>;
     level?: Array<any>;
   };
 };
@@ -78,12 +79,16 @@ type ScheduleInfo = {
 export type CheckItem = {
   label?: string;
   type?: string;
-  exec_sql?: string;
   condition?: string;
   value?: string;
   ret_type?: string;
   exec_db_id?: number;
+  exec_sql?: string;
   db_name?: string;
+  diff_type?: string;
+  exec_db2_id?: number;
+  exec_sql2?: string;
+  db2_name?: string;
 };
 
 export type Schedule = {

@@ -39,6 +39,13 @@ type CheckDBResult = {
   data?: boolean;
 };
 
+type SQLResult = {
+  success?: boolean;
+  code: number;
+  msg?: string;
+  data?: Array<any>;
+};
+
 /** 数据源列表 */
 export const getDBList = (params: object) => {
   return http.request<DBList>("get", baseUrlApi("dbinfo/"), { params });
@@ -67,6 +74,13 @@ export const updateDBInfo = (id: number | string, data: object) => {
 /** 检测数据源连通性 */
 export const checkDBConn = (data: object) => {
   return http.request<CheckDBResult>("post", baseUrlApi("dbinfo/check/"), {
+    data
+  });
+};
+
+/** 测试运行SQL */
+export const testRunSQL = (id: number | string, data: object) => {
+  return http.request<SQLResult>("post", baseUrlApi(`dbinfo/${id}/sql/`), {
     data
   });
 };
