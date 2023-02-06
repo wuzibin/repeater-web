@@ -320,8 +320,8 @@ const runSQL = async (
     console.log("执行的SQL----", sqlObj);
     const data = await testRunSQL(String(id), sqlObj);
     console.log("SQL执行情况----", data);
-    tmpSQL.value = data.data;
-    sqlHeader.value = tmpSQL.value[0];
+    sqlHeader.value = data.data.header;
+    tmpSQL.value = data.data.result;
     message(data.msg, { type: "success", showClose: true, duration: 3000 });
     displaySQL.value = true;
   } catch (e) {
@@ -391,12 +391,11 @@ onMounted(() => {
 
     <el-dialog v-model="displaySQL" title="SQL执行结果">
       <el-table :data="tmpSQL">
-        <el-table-column
-          v-for="(value, key) in sqlHeader"
-          :property="key"
-          :label="key"
-          :key="key"
-        />
+        <el-table-column v-for="(item, i) in sqlHeader" :key="i" :label="item">
+          <template v-slot="scope">
+            {{ scope.row[i] }}
+          </template>
+        </el-table-column>
       </el-table>
     </el-dialog>
 
@@ -788,15 +787,9 @@ onMounted(() => {
                             type="success"
                           />
                           <el-alert
-                            v-if="item.diff_type == 'num'"
+                            v-if="item.diff_type == 'value'"
                             :closable="false"
-                            title="对比返回的首条记录的第一个字段（数值）"
-                            type="success"
-                          />
-                          <el-alert
-                            v-if="item.diff_type == 'str'"
-                            :closable="false"
-                            title="比对返回的首条记录的第一个字段（字符串）"
+                            title="对比返回的首条记录的第一个字段内容"
                             type="success"
                           />
                         </el-form-item>

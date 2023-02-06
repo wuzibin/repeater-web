@@ -152,3 +152,10 @@ export const changeScheduleStatus = (data: object) => {
     data
   });
 };
+
+/** 执行任务 */
+export const runSchedule = (data: object) => {
+  return http.request<ScheduleInfo>("post", baseUrlApi("schedule/run/"), {
+    data
+  });
+};

@@ -3,7 +3,9 @@ import {
   getScheduleList,
   deleteSchedule,
   changeScheduleStatus,
-  Schedule
+  Schedule,
+  runSchedule,
+  getDict
 } from "@/api/schedule";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { message } from "@/utils/message";
@@ -11,8 +13,11 @@ import { ref, onMounted } from "vue";
 import { useDetail } from "./hooks";
 import Search from "@iconify-icons/ep/search";
 import AddFill from "@iconify-icons/ri/add-circle-line";
+import Run from "@iconify-icons/ri/play-line";
 import EditPen from "@iconify-icons/ri/pencil-line";
 import Delete from "@iconify-icons/ri/delete-bin-line";
+import { ElMessageBox } from "element-plus";
+import { getDBList } from "@/api/database";
 
 defineOptions({
   name: "Schedule"
@@ -74,6 +79,8 @@ const getScheduleListData = async () => {
 
 onMounted(() => {
   getScheduleListData();
+  getDBListData();
+  getDictData();
 });
 
 const handleDelete = async (row: Schedule) => {
@@ -107,6 +114,54 @@ const handleDelete = async (row: Schedule) => {
   }
 };
 
+const RunSchedule = (row: Schedule) => {
+  const OpSchedule = row;
+  /*scheduleInfo.value[
+      scheduleInfo.value.findIndex(schedule => schedule.id === id)
+    ];*/
+  console.log(OpSchedule);
+  if (OpSchedule) {
+    ElMessageBox.confirm(
+      `确认执行任务【${OpSchedule.periodic_task.name}】`,
+      "Warning",
+      {
+        confirmButtonText: "执行",
+        cancelButtonText: "取消",
+        type: "warning"
+      }
+    ).then(async () => {
+      try {
+        const data = await runSchedule({
+          schedule: [OpSchedule.id],
+          run: true
+        });
+        message(
+          `任务【${OpSchedule.periodic_task.name}】执行成功，${data.msg}`,
+          {
+            type: "success"
+          }
+        );
+      } catch (e) {
+        console.log(e);
+        e.response?.data?.msg
+          ? message(
+              `任务【${OpSchedule.periodic_task.name}】执行失败：` +
+                e.response.data.msg,
+              {
+                type: "error",
+                showClose: true,
+                duration: 3000
+              }
+            )
+          : message("执行失败：" + String(e), {
+              type: "error",
+              showClose: true,
+              duration: 3000
+            });
+      }
+    });
+  }
+};
 const ChangeStatus = async (row: Schedule) => {
   const OpSchedule = row;
   /*scheduleInfo.value[
@@ -147,6 +202,45 @@ const ChangeStatus = async (row: Schedule) => {
     } finally {
       OpSchedule.loading = false;
     }
+  }
+};
+
+// 检查类型
+const check_type = ref({});
+// 比对条件
+const condition = ref({});
+// 数据返回类型
+const ret_type = ref({});
+// 比对类型
+const diff_type = ref({});
+// 数据库信息
+const dbInfo = ref([]);
+
+const getDBListData = async () => {
+  try {
+    const data = await getDBList({
+      size: 1000
+    });
+    console.log("获取数据库信息----", data);
+    dbInfo.value = data.data;
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const getDictData = async () => {
+  try {
+    const data = await getDict({
+      dict: ["check_type", "condition", "ret_type", "diff_type"]
+    });
+    console.log("获取数据字典----", data);
+
+    check_type.value = data.data.check_type;
+    condition.value = data.data.condition;
+    ret_type.value = data.data.ret_type;
+    diff_type.value = data.data.diff_type;
+  } catch (e) {
+    console.log(e);
   }
 };
 </script>
@@ -192,26 +286,325 @@ const ChangeStatus = async (row: Schedule) => {
         >
           <el-table-column type="expand">
             <template #default="props">
-              <div m="4">
-                <p m="t-0 b-2">
-                  备注: {{ props.row.periodic_task.description }}
-                </p>
-                <p m="t-0 b-2">告警级别: {{ props.row.notify_config.level }}</p>
-                <p m="t-0 b-2">
-                  告警内容: {{ props.row.notify_config.content }}
-                </p>
-                <p m="t-0 b-2">逻辑表达式: {{ props.row.logical_exp }}</p>
-                <h3>Family</h3>
-                <el-table :data="props.row.check_item">
-                  <el-table-column label="Label" prop="label" />
-                  <el-table-column label="Type" prop="type" />
-                  <el-table-column label="Exec" prop="exec_sql" />
-                  <el-table-column label="Condition" prop="condition" />
-                  <el-table-column label="Value" prop="value" />
-                  <el-table-column label="Return" prop="ret_type" />
-                  <el-table-column label="Exec_DB" prop="exec_db_id" />
-                  <el-table-column label="DBName" prop="db_name" />
-                </el-table>
+              <div style="padding: 30px">
+                <el-descriptions
+                  class="margin-top"
+                  title="任务详情"
+                  :column="2"
+                  border
+                >
+                  <el-descriptions-item :span="2">
+                    <template #label>
+                      <div class="cell-item">备注</div>
+                    </template>
+                    {{ props.row.periodic_task.description }}
+                  </el-descriptions-item>
+                  <el-descriptions-item>
+                    <template #label>
+                      <div class="cell-item">告警级别</div>
+                    </template>
+                    <el-tag>{{ props.row.notify_config.level }}</el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item>
+                    <template #label>
+                      <div class="cell-item">逻辑表达式</div>
+                    </template>
+                    {{ props.row.logical_exp }}
+                  </el-descriptions-item>
+                  <el-descriptions-item :span="2">
+                    <template #label>
+                      <div class="cell-item">检查项</div>
+                    </template>
+                    <div>
+                      <el-row>
+                        <el-col
+                          :xs="20"
+                          :sm="20"
+                          :md="11"
+                          :lg="11"
+                          :xl="7"
+                          v-for="(item, index) in props.row.check_item"
+                          :key="item.label"
+                          :label="item.label"
+                          :offset="1"
+                          style="margin-bottom: 10px"
+                        >
+                          <el-card
+                            class="box-card"
+                            :body-style="{ padding: '15px' }"
+                            :prop="'props.row.check_item.' + index + '.value'"
+                            shadow="hover"
+                          >
+                            <template #header>
+                              <div class="card-header">
+                                <span
+                                  ><el-tag>{{ item.label }}</el-tag></span
+                                >
+                              </div>
+                            </template>
+                            <div class="text item">
+                              <div class="subFormItem">
+                                <el-form-item prop="type" label="检查类型">
+                                  <el-select
+                                    v-model="item.type"
+                                    placeholder="请选择"
+                                    disabled
+                                  >
+                                    <el-option
+                                      v-for="(value, key) in check_type"
+                                      :key="key"
+                                      :label="value"
+                                      :value="key"
+                                    />
+                                  </el-select>
+                                </el-form-item>
+                              </div>
+                              <!-- 执行SQL -->
+                              <div v-if="item.type == 'sql'">
+                                <div class="subFormItem">
+                                  <el-form-item prop="exec_sql" label="执行SQL">
+                                    <el-input
+                                      :autosize="{ minRows: 5 }"
+                                      type="textarea"
+                                      v-model="item.exec_sql"
+                                      disabled
+                                    />
+                                  </el-form-item>
+                                </div>
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="exec_db"
+                                    label="执行数据库"
+                                    disabled
+                                  >
+                                    <el-select
+                                      v-model="item.exec_db_id"
+                                      placeholder="请选择"
+                                      disabled
+                                    >
+                                      <el-option
+                                        v-for="db in dbInfo"
+                                        :key="db.id"
+                                        :label="db.nickname"
+                                        :value="db.id"
+                                      />
+                                    </el-select>
+                                  </el-form-item>
+                                </div>
+
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="ret_type"
+                                    label="返回结果类型"
+                                  >
+                                    <el-select
+                                      v-model="item.ret_type"
+                                      placeholder="请选择"
+                                      disabled
+                                    >
+                                      <el-option
+                                        v-for="(value, key) in ret_type"
+                                        :key="key"
+                                        :label="value"
+                                        :value="key"
+                                      />
+                                    </el-select>
+                                  </el-form-item>
+                                </div>
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="condition"
+                                    label="触发条件"
+                                  >
+                                    <el-form :inline="true">
+                                      <el-form-item style="margin-right: 0px">
+                                        <el-select
+                                          v-model="item.condition"
+                                          placeholder="条件"
+                                          style="width: 100px"
+                                          disabled
+                                        >
+                                          <el-option
+                                            v-for="(value, key) in condition"
+                                            :key="key"
+                                            :label="value"
+                                            :value="key"
+                                          />
+                                        </el-select>
+                                      </el-form-item>
+                                      <el-form-item>
+                                        <el-input
+                                          style="width: 100px"
+                                          v-model="item.value"
+                                          placeholder="阈值"
+                                          disabled
+                                        />
+                                      </el-form-item>
+                                    </el-form>
+                                  </el-form-item>
+                                </div>
+                              </div>
+
+                              <!-- 跨库比对 -->
+                              <div v-if="item.type == 'diff'">
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="exec_sql"
+                                    label="库1执行SQL"
+                                  >
+                                    <el-input
+                                      :autosize="{ minRows: 5 }"
+                                      type="textarea"
+                                      v-model="item.exec_sql"
+                                      disabled
+                                    />
+                                  </el-form-item>
+                                </div>
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="exec_db"
+                                    label="执行数据库"
+                                  >
+                                    <el-select
+                                      v-model="item.exec_db_id"
+                                      placeholder="请选择"
+                                      disabled
+                                    >
+                                      <el-option
+                                        v-for="db in dbInfo"
+                                        :key="db.id"
+                                        :label="db.nickname"
+                                        :value="db.id"
+                                      />
+                                    </el-select>
+                                  </el-form-item>
+                                </div>
+
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="exec_sql2"
+                                    label="库2执行SQL"
+                                  >
+                                    <el-input
+                                      :autosize="{ minRows: 5 }"
+                                      type="textarea"
+                                      v-model="item.exec_sql2"
+                                      disabled
+                                    />
+                                  </el-form-item>
+                                </div>
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="exec_db2"
+                                    label="执行数据库2"
+                                  >
+                                    <el-select
+                                      v-model="item.exec_db2_id"
+                                      placeholder="请选择"
+                                      disabled
+                                    >
+                                      <el-option
+                                        v-for="db in dbInfo"
+                                        :key="db.id"
+                                        :label="db.nickname"
+                                        :value="db.id"
+                                      />
+                                    </el-select>
+                                  </el-form-item>
+                                </div>
+
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="diff_type"
+                                    label="比对类型"
+                                  >
+                                    <el-select
+                                      v-model="item.diff_type"
+                                      placeholder="请选择"
+                                      disabled
+                                    >
+                                      <el-option
+                                        v-for="(value, key) in diff_type"
+                                        :key="key"
+                                        :label="value"
+                                        :value="key"
+                                      />
+                                    </el-select>
+                                    <el-alert
+                                      v-if="item.diff_type == 'count'"
+                                      :closable="false"
+                                      title="对比两个数据库返回的结果数目"
+                                      type="success"
+                                    />
+                                    <el-alert
+                                      v-if="item.diff_type == 'num'"
+                                      :closable="false"
+                                      title="对比返回的首条记录的第一个字段（数值）"
+                                      type="success"
+                                    />
+                                    <el-alert
+                                      v-if="item.diff_type == 'str'"
+                                      :closable="false"
+                                      title="比对返回的首条记录的第一个字段（字符串）"
+                                      type="success"
+                                    />
+                                  </el-form-item>
+                                </div>
+                                <div class="subFormItem">
+                                  <el-form-item
+                                    prop="condition"
+                                    label="触发条件"
+                                  >
+                                    <el-select
+                                      v-model="item.condition"
+                                      placeholder="条件"
+                                      style="width: 100px"
+                                      disabled
+                                    >
+                                      <el-option
+                                        v-for="(value, key) in condition"
+                                        :key="key"
+                                        :label="value"
+                                        :value="key"
+                                      />
+                                    </el-select>
+                                  </el-form-item>
+                                </div>
+                              </div>
+                            </div>
+                          </el-card>
+                        </el-col>
+                      </el-row>
+                    </div>
+                  </el-descriptions-item>
+                  <el-descriptions-item>
+                    <template #label>
+                      <div class="cell-item">告警标题</div>
+                    </template>
+                    {{ props.row.notify_config.title }}
+                  </el-descriptions-item>
+
+                  <el-descriptions-item>
+                    <template #label>
+                      <div class="cell-item">告警内容</div>
+                    </template>
+                    {{ props.row.notify_config.content }}
+                  </el-descriptions-item>
+                  <el-descriptions-item>
+                    <template #label>
+                      <div class="cell-item">告警条件</div>
+                    </template>
+                    在{{ props.row.notify_config.interval }}分钟内触发超过{{
+                      props.row.notify_config.count
+                    }}则告警
+                  </el-descriptions-item>
+                  <el-descriptions-item>
+                    <template #label>
+                      <div class="cell-item">告警压缩</div>
+                    </template>
+                    {{ props.row.notify_config.rest }}分钟内不重复告警
+                  </el-descriptions-item>
+                </el-descriptions>
               </div>
             </template>
           </el-table-column>
@@ -238,7 +631,21 @@ const ChangeStatus = async (row: Schedule) => {
             label="上次运行时间"
             prop="periodic_task.last_run_at"
           />
-          <el-table-column label="操作" width="180px">
+          <el-table-column label="操作" width="80px">
+            <template v-slot="scope">
+              <!-- 执行按钮 -->
+              <el-button
+                class="reset-margin"
+                link
+                type="info"
+                :icon="useRenderIcon(Run)"
+                @click="RunSchedule(scope.row)"
+              >
+                执行
+              </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column label="编辑" width="180px">
             <template v-slot="scope">
               <!-- 修改按钮 -->
               <el-button

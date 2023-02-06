@@ -43,7 +43,10 @@ type SQLResult = {
   success?: boolean;
   code: number;
   msg?: string;
-  data?: Array<any>;
+  data?: {
+    header: Array<string>;
+    result: Array<any>;
+  };
 };
 
 /** 数据源列表 */
