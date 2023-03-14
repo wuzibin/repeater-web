@@ -1,4 +1,5 @@
 import { http } from "@/utils/http";
+import { baseUrlApi } from "./utils";
 
 export type UserResult = {
   code: number;
@@ -16,6 +17,24 @@ export type UserResult = {
     expires: Date;
   };
 };
+
+type UserList = {
+  success?: boolean;
+  code: number;
+  msg?: string;
+  data?: Array<any>;
+};
+
+/*type UserInfo = {
+  success?: boolean;
+  code: number;
+  msg?: string;
+  data?: {
+    id: number;
+    username: string;
+    email: string;
+  };
+};*/
 
 export type RefreshTokenResult = {
   code: number;
@@ -40,4 +59,14 @@ export const refreshTokenApi = (data?: object) => {
   return http.request<RefreshTokenResult>("post", "/refresh/", {
     data
   });
+};
+
+/** 获取用户列表 */
+export const getUserList = (params: object) => {
+  return http.request<UserList>("get", baseUrlApi("user/"), { params });
+};
+
+/** 根据所属系统获取用户列表 */
+export const getSysUserList = (data: object) => {
+  return http.request<UserList>("post", baseUrlApi("user/system/"), { data });
 };

@@ -28,6 +28,7 @@ type SystemInfo = {
 };
 
 /** 业务系统列表 */
+// 后台已有权限控制根据用户返回所属业务系统
 export const getSysList = (params: object) => {
   return http.request<SystemList>("get", baseUrlApi("sysinfo/"), { params });
 };

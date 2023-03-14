@@ -17,7 +17,9 @@ export const usePermissionStore = defineStore({
       "DBInfoDetail",
       "DBInfoAdd",
       "SystemDetail",
-      "SystemAdd"
+      "SystemAdd",
+      "ScheduleDetail",
+      "ScheduleAdd"
     ]
   }),
   actions: {

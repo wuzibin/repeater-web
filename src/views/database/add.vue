@@ -109,10 +109,10 @@ const addDBDetail = async () => {
     console.log("新增数据源信息----", data);
     message(data.msg, { type: "success", showClose: true, duration: 3000 });
     // 关闭标签页
+    closeTab();
   } catch (e) {
     console.log(e);
     message(String(e), { type: "error", showClose: true, duration: 3000 });
-    closeTab();
   } finally {
     setTimeout(() => {
       dataLoading.value = false;

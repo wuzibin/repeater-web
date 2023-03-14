@@ -602,7 +602,10 @@ const getDictData = async () => {
                     <template #label>
                       <div class="cell-item">告警压缩</div>
                     </template>
-                    {{ props.row.notify_config.rest }}分钟内不重复告警
+                    <div v-if="props.row.notify_config.rest > 0">
+                      {{ props.row.notify_config.rest }}分钟内不重复告警
+                    </div>
+                    <div v-if="props.row.notify_config.rest == 0">不压缩</div>
                   </el-descriptions-item>
                 </el-descriptions>
               </div>

@@ -4,6 +4,7 @@ import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { message } from "@/utils/message";
 import { getDBList, testRunSQL } from "@/api/database";
 import { getSysList } from "@/api/system";
+import { getSysUserList } from "@/api/user";
 import { getSchedule, updateSchedule, getDict } from "@/api/schedule";
 import { ref, computed, onMounted } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
@@ -69,8 +70,7 @@ const INITIAL_DATA = {
   logical_exp: "",
   mode: "",
   system_id: null,
-  system_name: "",
-  loading: false // 前端展示行加载状态使用
+  system_name: ""
 };
 
 interface CheckItem {
@@ -111,6 +111,8 @@ const ClockedObj = ref({
 const NTypeObj = ref([]);
 // 业务系统信息
 const sysInfo = ref([]);
+// 用户信息
+const userInfo = ref([]);
 // 数据库信息
 const dbInfo = ref([]);
 // SQL临时结果
@@ -143,6 +145,16 @@ const getSysListData = async () => {
     const data = await getSysList({ size: 1000 });
     console.log("获取业务系统对照关系----", data);
     sysInfo.value = data.data;
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const getSysUserListData = async (id: number) => {
+  try {
+    const data = await getSysUserList({ system_id: id });
+    console.log("获取所属业务系统的用户信息----", data);
+    userInfo.value = data.data;
   } catch (e) {
     console.log(e);
   }
@@ -197,6 +209,11 @@ const getScheduleDetailData = async (
     const data = await getSchedule(String(id));
     console.log("获取任务信息----", data);
     scheduleData.value = data.data;
+    const sysuser = await getSysUserList({
+      system_id: scheduleData.value.system_id
+    });
+    console.log("获取所属业务系统的用户信息----", data);
+    userInfo.value = sysuser.data;
     NTypeObj.value = scheduleData.value.notify_config.type.split(",");
     switch (scheduleData.value.mode) {
       case "crontab":
@@ -231,9 +248,56 @@ const closeTab = () => {
   });
 };
 
+const myeval = exp => {
+  return new Function("return " + exp)();
+};
+
+const expvaild = () => {
+  let logical_exp = scheduleData.value.logical_exp;
+  if ("" === logical_exp.trim()) return "error";
+  logical_exp = logical_exp
+    .replace(new RegExp("and", "g"), "&&")
+    .replace(new RegExp("or", "g"), "||")
+    .replace(new RegExp("not", "g"), "!");
+  scheduleData.value.check_item.forEach(element => {
+    logical_exp = logical_exp.replace(new RegExp(element.label, "g"), "true");
+  });
+  console.log(logical_exp);
+  try {
+    return "" + myeval(logical_exp);
+  } catch (e) {
+    return e.message;
+  }
+};
+
+const checkexp = () => {
+  const chk_ret = expvaild();
+  "true" === chk_ret || "false" === chk_ret
+    ? message(`校验成功！若检查项所有条件为真，最终表达式结果为${chk_ret}`, {
+        type: "success",
+        showClose: true,
+        duration: 3000
+      })
+    : message(`逻辑表达式异常！${chk_ret}`, {
+        type: "error",
+        showClose: true,
+        duration: 3000
+      });
+};
+
 const updateScheduleDetail = async (
   id: number | string | string[] | number[]
 ) => {
+  const chk_ret = expvaild();
+  if ("true" !== chk_ret && "false" !== chk_ret) {
+    message("逻辑表达式有误！请改正后再提交！", {
+      type: "error",
+      showClose: true,
+      duration: 5000
+    });
+    return;
+  }
+
   try {
     scheduleData.value.notify_config.type = NTypeObj.value.join(",");
     switch (scheduleData.value.mode) {
@@ -437,6 +501,7 @@ onMounted(() => {
                   ref="systemRef"
                   v-model="scheduleData.system_id"
                   placeholder="请选择"
+                  @change="getSysUserListData(scheduleData.system_id)"
                 >
                   <el-option
                     v-for="item in sysInfo"
@@ -658,22 +723,36 @@ onMounted(() => {
                           >
                         </el-form-item>
                       </div>
-
                       <div class="subFormItem">
-                        <el-form-item prop="ret_type" label="返回结果类型">
+                        <el-form-item prop="diff_type" label="比对类型">
                           <el-select
-                            v-model="item.ret_type"
+                            v-model="item.diff_type"
                             placeholder="请选择"
                           >
                             <el-option
-                              v-for="(value, key) in ret_type"
+                              v-for="(value, key) in diff_type"
                               :key="key"
                               :label="value"
                               :value="key"
                             />
                           </el-select>
+                          <el-alert
+                            v-if="item.diff_type == 'count'"
+                            :closable="false"
+                            title="对比数据库返回的结果数目"
+                            type="info"
+                            show-icon
+                          />
+                          <el-alert
+                            v-if="item.diff_type == 'value'"
+                            :closable="false"
+                            title="对比返回首条记录的第一个字段的数值(INT)，如COUNT(*)"
+                            type="info"
+                            show-icon
+                          />
                         </el-form-item>
                       </div>
+
                       <div class="subFormItem">
                         <el-form-item prop="condition" label="触发条件">
                           <el-form :inline="true">
@@ -699,6 +778,28 @@ onMounted(() => {
                               />
                             </el-form-item>
                           </el-form>
+                        </el-form-item>
+                      </div>
+
+                      <div class="subFormItem">
+                        <el-form-item prop="ret_type" label="返回结果类型">
+                          <el-select
+                            v-model="item.ret_type"
+                            placeholder="请选择"
+                          >
+                            <el-option
+                              v-for="(value, key) in ret_type"
+                              :key="key"
+                              :label="value"
+                              :value="key"
+                            />
+                          </el-select>
+                          <el-alert
+                            :closable="false"
+                            title="仅配置北斗监控的返回结果，邮件默认返回完整SQL结果集"
+                            type="info"
+                            show-icon
+                          />
                         </el-form-item>
                       </div>
                     </div>
@@ -735,7 +836,22 @@ onMounted(() => {
                           >
                         </el-form-item>
                       </div>
-
+                      <div class="subFormItem">
+                        <el-form-item prop="condition" label="触发条件">
+                          <el-select
+                            v-model="item.condition"
+                            placeholder="条件"
+                            style="width: 100px"
+                          >
+                            <el-option
+                              v-for="(value, key) in condition"
+                              :key="key"
+                              :label="value"
+                              :value="key"
+                            />
+                          </el-select>
+                        </el-form-item>
+                      </div>
                       <div class="subFormItem">
                         <el-form-item prop="exec_sql2" label="库2执行SQL">
                           <el-input
@@ -794,22 +910,6 @@ onMounted(() => {
                           />
                         </el-form-item>
                       </div>
-                      <div class="subFormItem">
-                        <el-form-item prop="condition" label="触发条件">
-                          <el-select
-                            v-model="item.condition"
-                            placeholder="条件"
-                            style="width: 100px"
-                          >
-                            <el-option
-                              v-for="(value, key) in condition"
-                              :key="key"
-                              :label="value"
-                              :value="key"
-                            />
-                          </el-select>
-                        </el-form-item>
-                      </div>
                     </div>
                   </div>
                 </el-card>
@@ -824,7 +924,9 @@ onMounted(() => {
               </el-form-item>
             </el-col>
             <el-col :span="2" style="margin-left: 10px">
-              <el-button type="warning" plain>检查</el-button>
+              <el-button type="warning" plain @click="checkexp()"
+                >检查</el-button
+              >
             </el-col>
           </el-row>
 
@@ -877,7 +979,7 @@ onMounted(() => {
                   <div class="subFormItem">
                     <el-form-item prop="content" label="告警内容">
                       <el-input
-                        v-model="scheduleData.notify_config.title"
+                        v-model="scheduleData.notify_config.content"
                         placeholder="告警正文"
                         :autosize="{ minRows: 5 }"
                         type="textarea"
@@ -927,15 +1029,16 @@ onMounted(() => {
                   <div class="subFormItem">
                     <el-form-item prop="alert_user" label="告警联系人">
                       <el-select
-                        v-model="NTypeObj"
+                        v-model="scheduleData.notify_config.alert_user"
                         multiple
+                        filterable
                         placeholder="请选择"
                       >
                         <el-option
-                          v-for="(value, key) in notify_type"
-                          :key="key"
-                          :label="value"
-                          :value="key"
+                          v-for="user in userInfo"
+                          :key="user.id"
+                          :label="user.username"
+                          :value="user.id"
                         />
                       </el-select>
                     </el-form-item>
