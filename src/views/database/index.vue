@@ -38,6 +38,11 @@ const onCurrentChange = (current: number) => {
   getDBListData();
 };
 
+const searchDBListData = async () => {
+  pagination.value.current = 1;
+  getDBListData();
+};
+
 const dbInfo = ref([]);
 const dataLoading = ref(true);
 
@@ -104,10 +109,10 @@ const handleDelete = async (id: number | string) => {
         style="width: 300px"
         v-model="searchValue"
         placeholder="请输入数据源名称或IP地址"
-        @keyup.enter="getDBListData"
+        @keyup.enter="searchDBListData"
         @submit.prevent
         clearable
-        @clear="getDBListData"
+        @clear="searchDBListData"
       >
         <template #suffix>
           <el-icon class="el-input__icon">
@@ -181,7 +186,7 @@ const handleDelete = async (id: number | string) => {
         <el-pagination
           style="margin-top: 20px; text-align: center"
           :current-page="pagination.current"
-          :page-sizes="[1, 2, 5, 10]"
+          :page-sizes="[10, 20, 50, 100, 200]"
           :page-size="pagination.size"
           layout="->,total, prev, pager, next, sizes, jumper"
           :total="pagination.total"

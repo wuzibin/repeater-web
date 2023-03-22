@@ -264,7 +264,7 @@ const addScheduleDetail = async () => {
     return;
   }
   try {
-    scheduleData.value.notify_config.type = NTypeObj.value.join(",");
+    scheduleData.value.notify_config.type = NTypeObj.value.join("|");
     switch (scheduleData.value.mode) {
       case "crontab":
         scheduleData.value.periodic_task.crontab = CrontabObj.value;

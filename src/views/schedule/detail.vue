@@ -214,7 +214,7 @@ const getScheduleDetailData = async (
     });
     console.log("获取所属业务系统的用户信息----", data);
     userInfo.value = sysuser.data;
-    NTypeObj.value = scheduleData.value.notify_config.type.split(",");
+    NTypeObj.value = scheduleData.value.notify_config.type.split("|");
     switch (scheduleData.value.mode) {
       case "crontab":
         CrontabObj.value = scheduleData.value.periodic_task.crontab;
@@ -299,7 +299,7 @@ const updateScheduleDetail = async (
   }
 
   try {
-    scheduleData.value.notify_config.type = NTypeObj.value.join(",");
+    scheduleData.value.notify_config.type = NTypeObj.value.join("|");
     switch (scheduleData.value.mode) {
       case "crontab":
         scheduleData.value.periodic_task.crontab = CrontabObj.value;
